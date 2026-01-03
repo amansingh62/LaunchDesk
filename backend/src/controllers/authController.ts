@@ -7,7 +7,7 @@ import {
   verifyRefreshToken,
 } from "../utils/jwt.js";
 import { setAuthCookies, clearAuthCookies } from "../utils/cookies.js";
-import type { JwtPayload } from "../utils/jwt.js";
+import type { AuthJwtPayload } from "../utils/jwt.js";
 
 export const register = async (req: Request, res: Response) => {
   try {
@@ -58,7 +58,7 @@ export const login = async (req: Request, res: Response) => {
       return res.status(401).json({ message: "Invalid credentials" });
     }
 
-    const payload: JwtPayload = {
+    const payload: AuthJwtPayload = {
       userId: user.id,
       role: user.role,
     };
@@ -88,7 +88,7 @@ export const refresh = async (req: Request, res: Response) => {
   }
 
   try {
-    const payload = verifyRefreshToken(token) as JwtPayload;
+    const payload = verifyRefreshToken(token) as AuthJwtPayload;
 
     const accessToken = signAccessToken({
       userId: payload.userId,
@@ -108,3 +108,27 @@ export const refresh = async (req: Request, res: Response) => {
     res.status(401).json({ message: "Invalid refresh token" });
   }
 };
+
+export const me = async (req: Request, res: Response) => {
+   if (!req.user) {
+    return res.status(401).json({ message: "Unauthorized" });
+  }
+
+  const user = await prisma.user.findUnique({
+    where: { id: req.user.userId },
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      role: true,
+      createdAt: true,
+    },
+  });
+
+  if (!user) {
+    return res.status(404).json({ message: "User not found" });
+  }
+
+  res.json(user);
+
+}

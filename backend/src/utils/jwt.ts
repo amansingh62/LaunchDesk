@@ -1,19 +1,37 @@
 import jwt from "jsonwebtoken";
 import { env } from "../config/env.js";
 
-export interface JwtPayload {
+export interface AuthJwtPayload {
   userId: string;
-  role: "ADMIN" | "MANAGER" | "STAFF"; 
+  role: "ADMIN" | "MANAGER" | "STAFF";
 }
 
-export const signAccessToken = (payload: object) =>
+/* ---------- SIGN ---------- */
+
+export const signAccessToken = (payload: AuthJwtPayload): string =>
   jwt.sign(payload, env.jwtAccess, { expiresIn: "15m" });
 
-export const signRefreshToken = (payload: object) =>
+export const signRefreshToken = (payload: AuthJwtPayload): string =>
   jwt.sign(payload, env.jwtRefresh, { expiresIn: "7d" });
 
-export const verifyAccessToken = (token: string) => 
-    jwt.verify(token, env.jwtAccess);
+/* ---------- VERIFY ---------- */
 
-export const verifyRefreshToken = (token: string) => 
-    jwt.verify(token, env.jwtRefresh);
+export const verifyAccessToken = (token: string): AuthJwtPayload => {
+  const decoded = jwt.verify(token, env.jwtAccess);
+
+  if (typeof decoded === "string") {
+    throw new Error("Invalid access token payload");
+  }
+
+  return decoded as AuthJwtPayload;
+};
+
+export const verifyRefreshToken = (token: string): AuthJwtPayload => {
+  const decoded = jwt.verify(token, env.jwtRefresh);
+
+  if (typeof decoded === "string") {
+    throw new Error("Invalid refresh token payload");
+  }
+
+  return decoded as AuthJwtPayload;
+};
